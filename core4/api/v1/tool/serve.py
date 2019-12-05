@@ -190,7 +190,7 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
                 clsname = container_cls.split(".")[-1]
                 module = importlib.import_module(modname)
                 container_cls = getattr(module, clsname)
-            container_obj = container_cls(**kwargs)
+            container_obj = container_cls(routing=self.routing, **kwargs)
             root = container_obj.get_root()
             application = container_obj.make_application()
             if root in [c.get_root() for c in self.container]:
@@ -284,6 +284,7 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
                         rsc_id=rule.rsc_id,
 
                         author=handler.author,
+                        version=handler.version(),
                         project=handler.get_project(),
                         protected=handler.protected,
                         qual_name=handler.qual_name(),
@@ -291,7 +292,8 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
                         title=handler.title,
                         subtitle=handler.subtitle,
                         enter_url=handler.enter_url,
-                        target=handler.target
+                        target=handler.target,
+                        spa=handler.spa
                     )
                     # respect and populate handler arguments to overwrite
                     for attr, value in rule.target_kwargs.items():
