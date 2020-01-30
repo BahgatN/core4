@@ -106,7 +106,6 @@ api:
   card_html_page: standard/template/card.html
   help_html_page: standard/template/help.html
   info_html_page: standard/template/info.html
-  contact: mail@mailer.com
   reset_password:
     expiration: 28800  # 8h
   token:
@@ -159,3 +158,4 @@ queue:
     hour: second
     minute: second
     second: millisecond
+

@@ -6,16 +6,12 @@ from subprocess import Popen, PIPE
 import feather
 import numpy as np
 import pandas as pd
-import rpy2.robjects.packages as rpackages
 from jinja2 import Environment, BaseLoader
-from rpy2 import robjects as ro
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.conversion import localconverter
 
 import core4.error
 import core4.error
 from core4.queue.helper.job.base import CoreLoadJob
-
+from core4.queue.helper.job.base import CoreAbstractMixin
 # https://stackoverflow.com/questions/11716923/python-interface-for-r-programming-language
 # https://www.kdnuggets.com/2015/10/integrating-python-r-data-analysis-part1.html
 
@@ -34,7 +30,7 @@ return <- function(v){
 """
 
 
-class CoreRJob(CoreLoadJob):
+class CoreRJob(CoreLoadJob, CoreAbstractMixin):
 
     def r(self, source=None, code=None, **kwargs):
         tempdir = self.make_temp_folder()
@@ -100,6 +96,10 @@ class CoreRJob(CoreLoadJob):
         # activating this functio allows an automotized transfer
         # from R dataframes to pandas dataframe
 
+        import rpy2.robjects.packages as rpackages
+        from rpy2.robjects import pandas2ri
+        from rpy2 import robjects as ro
+
         lib_path = os.path.join(os.path.dirname(sys.executable), RLIB)
         pandas2ri.activate()
         base = rpackages.importr('base')
@@ -112,6 +112,9 @@ class CoreRJob(CoreLoadJob):
         :param df: pandas dataframe
         :return:
         """
+        from rpy2 import robjects as ro
+        from rpy2.robjects import pandas2ri
+        from rpy2.robjects.conversion import localconverter
         with localconverter(ro.default_converter + pandas2ri.converter):
             r_df = ro.conversion.py2rpy(df)
         return r_df

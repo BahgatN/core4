@@ -59,25 +59,27 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
         http_args = {}
         cert_file = self.config.api.crt_file
         key_file = self.config.api.key_file
-        if cert_file and key_file:
-            self.logger.info("securing server with [%s]", cert_file)
-            http_args["ssl_options"] = {
-                "certfile": cert_file,
-                "keyfile": key_file,
-            }
-            self.protocol = "https"
-        else:
-            self.protocol = "http"
         # global settings
         name = name or "app"
         self.identifier = "@".join([name, core4.util.node.get_hostname()])
         self.port = int(port or self.config.api.port)
         self.address = address or "0.0.0.0"
         self.hostname = core4.util.node.get_hostname()
-        self.routing = "{}://{}".format(
-            self.protocol, routing or "%s:%d" % (self.address, self.port))
-        if self.routing.endswith("/"):
-            self.routing = self.routing[:-1]
+        if cert_file and key_file:
+            self.logger.info("securing server with [%s]", cert_file)
+            http_args["ssl_options"] = {
+                "certfile": cert_file,
+                "keyfile": key_file,
+            }
+            protocol = "https"
+        else:
+            protocol = "http"
+        if routing is None:
+            routing = "%s://%s:%d" % (protocol, self.address, self.port)
+        if routing.endswith("/"):
+            self.routing = routing[:-1]
+        else:
+            self.routing = routing
         return http_args
 
     def start_http(self, http_args, router, reuse_port=True):
@@ -224,7 +226,6 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
                 "heartbeat": None,
                 "hostname": self.hostname,
                 "routing": self.routing,
-                "protocol": self.protocol,
                 "address": self.address,
                 "port": self.port,
                 "kind": "app",
@@ -274,7 +275,6 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
                 handler = rule.target
                 if issubclass(handler, CoreBaseHandler):
                     doc = dict(
-                        protocol=self.protocol,
                         hostname=self.hostname,
                         port=self.port,
                         routing=self.routing,
@@ -379,7 +379,7 @@ class CoreApiServerTool(CoreBase, CoreLoggerMixin):
         scope = []
         intro = CoreIntrospector()
         for f in filter:
-            for pro in intro.introspect():
+            for pro in intro.introspect(project):
                 for container in pro["api_containers"]:
                     if f is None or container["name"].startswith(f):
                         if container["name"] not in scope:
