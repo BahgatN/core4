@@ -74,10 +74,19 @@ class CoreRole(CoreBase):
         ]
         self.data = dict([(f.key, f) for f in fields])
 
+        # fix #144
+        if "email" in self.data:
+            if self.data["email"].value is not None:
+                self.data["email"].value = self.data[
+                    "email"].value.lower().strip()
+            # fix #138
+            if not self.data["email"].value:
+                self.data["email"].value = None
 
         #todo: deprecated later, discussion with mkr and mra
         # so long drop of field "total_perm" manually
         kwargs.pop('perm_total', None)
+        kwargs.pop('role_total', None)
 
         for field in kwargs:
             if (field not in self.data):
@@ -181,8 +190,8 @@ class CoreRole(CoreBase):
                  yet. It will be set prior to logging in via a token provided
                  by email.
         """
-        has_password = self.password is not None
-        has_email = self.email is not None
+        has_password = bool(self.password)
+        has_email = bool(self.email)
         if initial:
             if not (has_email == has_password or has_email):
                 raise AttributeError("user role requires email on creation")
@@ -357,10 +366,10 @@ class CoreRole(CoreBase):
 
     @classmethod
     async def _find_one(cls, **kwargs):
-        doc = await CoreRole().load_one(**kwargs)
+        doc = await cls().load_one(**kwargs)
         if doc:
             password = doc.pop("password", None)
-            role = CoreRole(**doc)
+            role = cls(**doc)
             role.data["password"].__dict__["value"] = password
             return role
         return None
@@ -555,8 +564,9 @@ class CoreRole(CoreBase):
         doc = self.to_response()
         doc["perm"] = sorted(doc["perm"])
         doc["perm_total"] = sorted(await self.casc_perm())
-        doc["role"] = sorted([r.name for r in await self.casc_role()
-                              if r.name != self.name])
+        doc["role"] = sorted([r for r in self.role if r != self.name])
+        doc["role_total"] = sorted([r.name for r in await self.casc_role()
+                                    if r.name != self.name])
         return doc
 
     async def manage_filter(self, filter):
