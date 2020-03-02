@@ -20,9 +20,11 @@ from pip import __version__ as pip_version
 import core4
 import core4.api.v1.application
 import core4.base
+from core4.base.main import CoreAbstractMixin
 import core4.error
 import core4.queue.helper.job.base
 import core4.queue.job
+import core4.queue.helper.job.base
 import core4.queue.query
 import core4.service.introspect.main
 import core4.util.node
@@ -218,15 +220,11 @@ class CoreProject(core4.base.CoreBase):
         #   - core4.api.v1.application.CoreApiContainer
         members = inspect.getmembers(module, inspect.isclass)
         for (clsname, cls) in members:
-            if issubclass(cls, core4.base.main.CoreBase):
-                if cls.qual_name() == "core4.queue.helper.job.base.CoreLoadJob":
-                    print("OK")
+            if (issubclass(cls, core4.base.main.CoreBase)
+                    and CoreAbstractMixin not in cls.__bases__):
                 if cls is core4.queue.job.CoreJob:
                     continue
                 if cls is core4.api.v1.application.CoreApiContainer:
-                    continue
-                if core4.queue.helper.job.base.CoreAbstractJobMixin \
-                        in cls.__mro__:
                     continue
                 if cls in self._seen:
                     continue
@@ -361,7 +359,7 @@ class CoreIntrospector(core4.base.CoreBase, core4.queue.query.QueryMixin):
                 )
         return home
 
-    def introspect(self):
+    def introspect(self, project=None):
         """
         Retrieves meta information about the current or all projects. If
         ``config.folder.home`` is specified, then information about all
@@ -376,26 +374,29 @@ class CoreIntrospector(core4.base.CoreBase, core4.queue.query.QueryMixin):
         if home:
             data = []
             currpath = os.curdir
-            for project in sorted(os.listdir(home)):
-                fullpath = os.path.abspath(os.path.join(home, project))
+            for pro in sorted(os.listdir(home)):
+                if project is not None and pro != project:
+                    continue
+                fullpath = os.path.abspath(os.path.join(home, pro))
                 if os.path.isdir(fullpath):
-                    pypath = os.path.join(home, project, VENV_PYTHON)
+                    pypath = os.path.join(home, pro, VENV_PYTHON)
                     os.chdir(fullpath)
                     self.logger.info("listing [%s]", pypath)
                     if os.path.exists(pypath) and os.path.isfile(pypath):
                         # this is Python virtual environment:
-                        out = core4.service.introspect.main.exec_project(
-                            project, ITERATE, comm=True)
+                        out, err = core4.service.introspect.main.exec_project(
+                            pro, ITERATE, comm=True)
                         try:
                             js = json.loads(out)
                             data += js
                         except Exception as exc:
-                            self.logger.error("failed to load [%s]:\n%s\n%s",
-                                              project, exc, out)
+                            self.logger.error(
+                                "failed to load [%s]:\n%s\n%s\n%s",
+                                pro, exc, out, err)
                     else:
                         self.logger.error("failed to load [%s] due to"
                                           "missing Python virtual "
-                                          "environment", project)
+                                          "environment", pro)
                 os.chdir(currpath)
             return data
         else:
@@ -587,17 +588,24 @@ class CoreIntrospector(core4.base.CoreBase, core4.queue.query.QueryMixin):
         if replace:
             os.execve(python_path, [python_path, "-c", cmd], env)
         proc = subprocess.Popen([python_path, "-c", cmd], stdout=stdout,
-                                stderr=subprocess.STDOUT, env=env)
+                                stderr=stdout, env=env)
         os.chdir(currdir)
         if wait or comm:
             if comm:
                 (stdout, stderr) = proc.communicate()
+                if stderr:
+                    stderr = stderr.decode("utf-8").strip()
+                else:
+                    stderr = "null"
+                if stderr == "":
+                    stderr = "null"
                 if stdout:
-                    out = stdout.decode("utf-8").strip()
-                    if out == "":
-                        return "null"
-                    return out
-                return "null"
+                    stdout = stdout.decode("utf-8").strip()
+                    if stdout == "":
+                        stdout = "null"
+                else:
+                    stdout = "null"
+                return stdout, stderr
             proc.wait()
 
     def collect_job(self):

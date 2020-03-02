@@ -73,6 +73,12 @@ class CoreRole(CoreBase):
             # QuotaField("quota", **kwargs),
         ]
         self.data = dict([(f.key, f) for f in fields])
+
+
+        #todo: deprecated later, discussion with mkr and mra
+        # so long drop of field "total_perm" manually
+        kwargs.pop('perm_total', None)
+
         for field in kwargs:
             if (field not in self.data):
                 raise KeyError("unknown field [{}]".format(field))
@@ -500,6 +506,26 @@ class CoreRole(CoreBase):
                           self.name)
         return False
 
+    async def has_client_access(self, client):
+        """
+        Verifies the user has a valid permission ``app://client/[client-name]``.
+
+        :param client: client (str) extracted from the URL
+        :return: ``True`` for success, else ``False``
+        """
+        if await self.is_admin():
+            return True
+        for p in await self.casc_perm():
+            parts = p.split("/")
+            if len(parts) > 3:
+                if parts[0] == "app:":
+                    if parts[2] == "client":
+                        if "/".join(parts[3:]) == client:
+                            self.logger.debug("grant access to client [%s]",
+                                              client)
+                            return True
+        return False
+
     async def login(self):
         """
         Updates the ``last_login`` attribute of the role-
@@ -527,7 +553,8 @@ class CoreRole(CoreBase):
         :return: dict
         """
         doc = self.to_response()
-        doc["perm"] = sorted(await self.casc_perm())
+        doc["perm"] = sorted(doc["perm"])
+        doc["perm_total"] = sorted(await self.casc_perm())
         doc["role"] = sorted([r.name for r in await self.casc_role()
                               if r.name != self.name])
         return doc
@@ -557,9 +584,9 @@ class CoreRole(CoreBase):
                 query_filter = \
                     {
                         "$or": [
-                            {"name": filter},
-                            {"realname": filter},
-                            {"perm": filter}
+                            {"name": {"$regex": filter, '$options': 'i'}},
+                            {"realname": {"$regex": filter, '$options': 'i'}},
+                            {"perm": {"$regex": filter, '$options': 'i'}}
                         ]
                     }
                 filter = query_filter
