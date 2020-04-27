@@ -20,9 +20,40 @@
           v-show="!miniVariant"
           v-model="tabs"
         >
-
           <v-tab>
             Widgets
+            <v-btn
+              icon
+              small
+              class="mr-0 ml-2"
+              @click.stop="boardHelpDialogOpen = true"
+            >
+              <v-icon
+                small
+                color="grey"
+              >help</v-icon>
+              <v-dialog
+                v-model="boardHelpDialogOpen"
+                max-width="960px"
+              >
+                <v-card>
+                  <v-card-text>
+                    <howto type="layer">
+                      <v-btn
+                        slot="button-slot"
+                        color="primary"
+                        @click.stop="boardHelpDialogOpen = false"
+                      >Close</v-btn>
+                    </howto>
+                  </v-card-text>
+                </v-card>
+              </v-dialog>
+            </v-btn>
+          </v-tab>
+          <v-tab>
+
+            <span>Boards</span>
+            <v-spacer></v-spacer>
             <v-btn
               icon
               small
@@ -60,22 +91,7 @@
                   </v-card-actions>
                 </v-card>
               </v-dialog>
-            </v-btn>
-          </v-tab>
-          <v-tab>
 
-            <span>Boards</span>
-            <v-spacer></v-spacer>
-            <v-btn
-              icon
-              small
-              class="mr-0 ml-2"
-              @click.stop="boardHelpDialogOpen = true"
-            >
-              <v-icon
-                small
-                color="grey"
-              >help</v-icon>
             </v-btn>
 
           </v-tab>
@@ -137,10 +153,7 @@
         <widgets-list :scale="currScalePerc" />
       </v-tab-item>
       <v-tab-item>
-        <side-navigation
-          :help-dialog-open="boardHelpDialogOpen"
-          @close="boardHelpDialogOpen = false"
-        />
+        <side-navigation />
       </v-tab-item>
     </v-tabs-items>
   </v-navigation-drawer>
@@ -151,12 +164,14 @@ import { mapActions, mapGetters } from 'vuex'
 
 import WidgetsList from '@/components/WidgetsList'
 import SideNavigation from '@/components/SideNavigation'
+import Howto from '@/components/Howto'
 
 export default {
   name: 'widget-manager',
   components: {
     WidgetsList,
-    SideNavigation
+    SideNavigation,
+    Howto
   },
   mounted () {
   },
@@ -208,7 +223,6 @@ div.scaler {
     }
   }
 }
-
 div.leer {
   &:after {
     left: 12px;
@@ -237,7 +251,7 @@ div.dreiviertel {
   padding-top: 60px;
 }
 
-/deep/ .v-autocomplete {
+::v-deep .v-autocomplete {
   position: relative;
   margin-left: -12px !important;
   max-width: none !important;
@@ -256,7 +270,7 @@ div.dreiviertel {
   }
 }
 
-/deep/ .v-toolbar__content {
+::v-deep .v-toolbar__content {
   padding-right: 6px;
   padding-left: 0;
 }
@@ -270,17 +284,18 @@ div.dreiviertel {
     }
   }
 
-  &.v-navigation-drawer, &.v-tabs-items {
+  &.v-navigation-drawer,
+  &.v-tabs-items {
     background-color: darken(#202020, 1);
     background: darken(#202020, 1);
   }
-  /deep/ &.v-tabs-bar {
+  ::v-deep &.v-tabs-bar {
     background-color: darken(#202020, 1) !important;
     background: darken(#202020, 1);
   }
 
-  /deep/ &.v-autocomplete {
-    /deep/ .v-input__slot {
+  ::v-deep &.v-autocomplete {
+    ::v-deep .v-input__slot {
       background-color: var(--v-secondary-lighten2) !important;
     }
 
@@ -299,7 +314,7 @@ div.dreiviertel {
     }
   }
 
-  /deep/ &.v-autocomplete {
+  ::v-deep &.v-autocomplete {
     &:after {
       border-color: transparent #fff transparent transparent;
     }
@@ -318,21 +333,21 @@ div.dreiviertel {
 </style>
 <style scoped lang="css">
 div >>> .with-hover {
-  height: 56px !important;
+  height: 64px !important;
   width: 32px;
   padding-left: 4px;
   flex: none;
 }
 
 div >>> .with-hover.right {
-  padding-top: 0;
+  padding-top: 2px;
 }
 
 div >>> .with-hover.right .v-icon {
   margin-right: 4px !important;
-  margin-bottom: 1px !important;
+  margin-bottom: 2px !important;
   margin-top: 0 !important;
-  font-size: 17px !important;
+  font-size: 18px !important;
 }
 div >>> .with-hover.right .v-icon:hover {
   color: var(--v-primary-base) !important;
@@ -357,9 +372,6 @@ div >>> .v-list-item__content {
 }
 
 div >>> .v-list-item__action {
-  /*   padding-right: 4px;
-  margin-right: 2px;
-  min-width: 32px; */
   cursor: grab !important;
 }
 
@@ -370,25 +382,20 @@ div >>> .v-list-item__action.with-hover {
 div >>> .v-list-item__action.with-hover:hover {
   cursor: grab;
 }
-
-/* div >>> .v-subheader {
-  font-weight: 600;
-  padding-left: 12px;
-  padding-right: 3px;
-} */
 </style>
 
 <style scoped lang="scss">
-/deep/ .v-list-item__title {
+::v-deep .v-list-item__title {
   font-weight: 700;
+  margin-bottom: 6px;
 }
-/deep/ .v-list-item.mini-widget {
-  height: 58px;
-  min-height: 58px;
+::v-deep .v-list-item.mini-widget {
+  height: 66px;
+  min-height: 66px;
   margin-bottom: 6px;
 }
 // TODO: SearchOptionsMenu.vue
-/deep/ .v-input__append-outer {
+::v-deep .v-input__append-outer {
   margin-top: 0 !important;
   margin-left: 0 !important;
   .append-to-search {
@@ -396,8 +403,8 @@ div >>> .v-list-item__action.with-hover:hover {
   }
 }
 
-/deep/ .mini-widget,
-/deep/ .append-to-search {
+::v-deep .mini-widget,
+::v-deep .append-to-search {
   position: relative;
   &:after {
     content: "";
@@ -405,24 +412,30 @@ div >>> .v-list-item__action.with-hover:hover {
     top: 0;
     right: 0;
     width: 0;
-    height: 0;
+    height: 0px;
     border-style: solid;
     border-width: 0 12px 12px 0;
     border-color: transparent darken(#202020, 1) transparent transparent;
     z-index: 100;
   }
 }
+::v-deep .mini-widget {
+  overflow: hidden;
+  &:after {
+    top: -54px;
+  }
+}
 .theme--dark {
-  /deep/ .v-list-item__action.with-hover {
+  ::v-deep .v-list-item__action.with-hover {
     background-color: var(--v-secondary-lighten3);
   }
 
-  /deep/ .v-list-item__action.with-hover:hover {
+  ::v-deep .v-list-item__action.with-hover:hover {
     background-color: var(--v-secondary-lighten4);
   }
 
-  /deep/ .mini-widget,
-  /deep/ .append-to-search {
+  ::v-deep .mini-widget,
+  ::v-deep .append-to-search {
     background-color: var(--v-secondary-lighten2);
 
     &:after {
@@ -432,20 +445,20 @@ div >>> .v-list-item__action.with-hover:hover {
 }
 
 .theme--light {
-  /deep/ .v-chip__content {
+  ::v-deep .v-chip__content {
     color: #fff;
   }
 
-  /deep/ .v-list-item__action.with-hover {
+  ::v-deep .v-list-item__action.with-hover {
     background-color: rgba(0, 0, 0, 0.15);
   }
 
-  /deep/ .v-list-item__action.with-hover:hover {
+  ::v-deep .v-list-item__action.with-hover:hover {
     background-color: rgba(0, 0, 0, 0.1);
   }
 
-  /deep/ .mini-widget,
-  /deep/ .append-to-search {
+  ::v-deep .mini-widget,
+  ::v-deep .append-to-search {
     background-color: darken(#fff, 5);
 
     &:after {

@@ -6,11 +6,7 @@ from subprocess import Popen, PIPE
 import feather
 import numpy as np
 import pandas as pd
-import rpy2.robjects.packages as rpackages
 from jinja2 import Environment, BaseLoader
-from rpy2 import robjects as ro
-from rpy2.robjects import pandas2ri
-from rpy2.robjects.conversion import localconverter
 
 import core4.error
 import core4.error
@@ -26,6 +22,13 @@ RLIB = "../lib/R"  # from Python executable
 RLIBVAR = "R_LIBS_SITE"
 
 SNIPPET = """
+
+r = getOption("repos")
+r["CRAN"] = "%s"
+options(repos = r)
+if(require('feather')==FALSE){
+    install.packages('feather')
+}
 library(feather)
 
 return <- function(v){
@@ -48,7 +51,7 @@ class CoreRJob(CoreLoadJob, CoreAbstractMixin):
             else:
                 value = v
             exchange[k] = value
-        snippet = SNIPPET % (tempdir)
+        snippet = SNIPPET % (self.config.rjob.cran_mirror, tempdir)
         if source is not None:
             if source.startswith("/"):
                 source = os.path.join(self.project_path(), source[1:])
@@ -100,6 +103,10 @@ class CoreRJob(CoreLoadJob, CoreAbstractMixin):
         # activating this functio allows an automotized transfer
         # from R dataframes to pandas dataframe
 
+        import rpy2.robjects.packages as rpackages
+        from rpy2.robjects import pandas2ri
+        from rpy2 import robjects as ro
+
         lib_path = os.path.join(os.path.dirname(sys.executable), RLIB)
         pandas2ri.activate()
         base = rpackages.importr('base')
@@ -112,6 +119,9 @@ class CoreRJob(CoreLoadJob, CoreAbstractMixin):
         :param df: pandas dataframe
         :return:
         """
+        from rpy2 import robjects as ro
+        from rpy2.robjects import pandas2ri
+        from rpy2.robjects.conversion import localconverter
         with localconverter(ro.default_converter + pandas2ri.converter):
             r_df = ro.conversion.py2rpy(df)
         return r_df

@@ -35,20 +35,56 @@ class InfoHandler(CoreRequestHandler):
             401 Unauthorized:
 
         Examples:
-            >>> from requests import get, post, delete, put
-            >>> from pprint import pprint
-            >>> import random
-            >>> url = "http://localhost:5001/core4/api/v1"
-            >>> signin = get(url + "/login?username=admin&password=hans")
-            >>> token = signin.json()["data"]["token"]
-            >>> h = {"Authorization": "Bearer " + token}
-            >>> rv = get(url  +  "/_info", cookies=signin.cookies)
+            >>> from requests import get
+            >>> rv = get("http://localhost:5001/core4/api/v1/_info")
             >>> rv.json()
         """
+        if self.request.query.lower() == "version":
+            return await self.post()
         result = []
         for handler in await self.application.container.get_handler():
-            if await self.user.has_api_access(handler["qual_name"]):
-                result.append(handler)
+            check = []
+
+            # self.logger.info("handler: [%s]", str(handler))
+
+            if handler["perm_base"] == "handler":
+                check.append(handler["qual_name"])
+            elif handler["perm_base"] == "container":
+                check += handler["container"]
+            for test in check:
+                if await self.user.has_api_access(test):
+                    result.append(handler)
+                    break
         if self.wants_html():
             return self.render(self.info_html_page, data=result)
         self.reply(result)
+
+    async def post(self):
+        """
+        Retrieve project name, version and core4 version. This data can be
+        retrieved with ``GET /core4/api/v1/_info?version``, too.
+
+        Methods:
+            POST /core4/api/v1/_info - project and core4 version
+
+        Parameters:
+            none
+
+        Returns:
+            data element with dict of version, project and core4 version
+
+        Raises:
+            401 Unauthorized:
+
+        Examples:
+            >>> from requests import post
+            >>> rv = post("http://localhost:5001/core4/api/v1/_info")
+            >>> rv.json()
+        """
+        self.reply(
+            {
+                "project": self.application.container.project,
+                "version": self.application.container.version(),
+                "core4": self.version()
+            }
+        )
