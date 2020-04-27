@@ -9,6 +9,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.history
 .Python
 build/
 develop-eggs/
@@ -102,3 +103,4 @@ node_modules
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.history/*

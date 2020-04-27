@@ -142,8 +142,6 @@
                 <span>Remove widget from board</span>
               </v-tooltip>
             </v-layout>
-            <!--
-               :href="widget.endpoint.enter_url" -->
             <a v-if="widget.endpoint">
               <v-card-text
                 @click="open(widget)"
@@ -169,7 +167,6 @@ import { mapActions, mapGetters } from 'vuex'
 import { Box, Container } from '@dattn/dnd-grid'
 import '@dattn/dnd-grid/dist/dnd-grid.css'
 import Howto from '@/components/Howto.vue'
-
 const lodash = require('lodash')
 
 export default {
@@ -310,7 +307,7 @@ export default {
   }
 }
 
-/deep/ .v-card__text {
+::v-deep .v-card__text {
   padding: 0;
   height: calc(100%);
   &:before {
@@ -336,7 +333,7 @@ export default {
   }
 }
 
-/deep/ .v-card {
+::v-deep .v-card {
   a {
     text-decoration: none;
   }
@@ -353,7 +350,7 @@ export default {
   position: relative;
 }
 
-/deep/ .v-card__title {
+::v-deep .v-card__title {
   position: absolute;
   left: 0;
   right: 0;
@@ -397,7 +394,7 @@ export default {
     box-shadow: 0px 0px 4px 2px rgba(255, 255, 255, 0.45) !important;
   }
 
-  /deep/ .v-card__title {
+  ::v-deep .v-card__title {
     background-color: rgba(0, 0, 0, 0.1);
   }
 }
@@ -407,7 +404,7 @@ export default {
     box-shadow: 0px 0px 5px 3px rgba(0, 0, 0, 0.33) !important;
   }
 
-  /deep/ .v-card__title {
+  ::v-deep .v-card__title {
     background-color: rgba(0, 0, 0, 0.1);
   }
 
